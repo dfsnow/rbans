@@ -13,14 +13,13 @@ psql -d "$db_name" -U "$db_user" << EOD
     CREATE TABLE "public"."comments" (
         gid serial,
         "author" varchar(20),
-        "subreddit" varchar(20),
+        "subreddit" varchar(200),
         "parent_id" varchar(20),
         "id" varchar(20),
         "subreddit_id" varchar(20),
         "body" varchar(50000),
         "year" smallint,
-        "month" smallint,
-        "day" smallint
+        "month" smallint
         );
     COMMIT;
 
