@@ -1,68 +1,98 @@
+import db_config
 import json
 import threading
 import gc
-import db_config
+import os
+import argparse
 from time import sleep
 from datetime import datetime
 from psycopg2 import pool
 
 gc.collect()
 
+parser = argparse.ArgumentParser(description='Load chunks into PSQL')
+parser.add_argument("-d", "--dir", help="specify input directory",
+        type=str, required=True)
+parser.add_argument("-t", "--threads", help="max number of threads",
+        type=str, required=True)
+parser.add_argument("-c", "--connections",
+        help="max number of psql connections",
+        type=str, required=True)
+
+args = parser.parse_args()
+max_threads = args.threads
+max_conns = args.connections
+working_dir = args.dir
+
+files = os.listdir(working_dir)
+
 # Open a threaded pool connection
 psql_pool = pool.ThreadedConnectionPool(
         minconn = 1,
-        maxconn = 100,
-        user = db_config,
+        maxconn = max_conns,
+        user = db_config.db_user,
         host = "localhost",
         port = "5432",
         database = "reddit",
-        password = db_config)
+        password = db_config.db_password)
 
+# Check if pool creation successful
 if(psql_pool):
     print("Connection pool created successfully")
 
+# Main insert function
 def insert_comment(fname):
 
+    # Retreive connection from threaded pool
     ps_connection = psql_pool.getconn()
     ps_cursor = ps_connection.cursor()
 
+    # Open JSON chunk file, parse, and extract year and month
     with open(fname, 'r') as json_file:
         for line in json_file:
             comment = json.loads(line)
             timestamp = datetime.utcfromtimestamp(int(comment["created_utc"]))
             comment["year"] = timestamp.year
             comment["month"] = timestamp.month
+            comment["day"] = timestamp.day
 
+            # Cursor execute insertion
             ps_cursor.execute("""
                 INSERT INTO comments (
                 author,
                 subreddit,
+                subreddit_id,
                 parent_id,
                 id,
-                subreddit_id,
+                score,
                 body,
                 year,
-                month
+                month,
+                day
                 ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s)
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ;""", (
                     comment["author"],
                     comment["subreddit"],
+                    comment["subreddit_id"],
                     comment["parent_id"],
                     comment["id"],
-                    comment["subreddit_id"],
+                    comment["score"],
                     comment["body"],
                     comment["year"],
-                    comment["month"]
+                    comment["month"],
+                    comment["day"]
                     ))
 
+        # Commit changes, close connection, return conn to pool
         ps_connection.commit()
         ps_cursor.close()
         psql_pool.putconn(ps_connection)
 
-files = ["/home/snow/temp/test_" + str(x).zfill(2) for x in range(11)]
-max_threads = 24
+        print("Successfully inserted: " + fname)
 
+
+# Threading bit
 while len(files) > 0:
     if threading.active_count() < max_threads + 1:
         filen = files.pop()
@@ -74,8 +104,7 @@ while len(files) > 0:
 while threading.active_count() > 1:
     sleep(0.1)
 
-#insert_comment('/home/snow/temp/RC_2006-05.json')
-
+# Close all connections
 psql_pool.closeall
 
 
