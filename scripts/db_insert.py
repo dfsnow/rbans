@@ -10,6 +10,9 @@ from psycopg2 import pool
 
 gc.collect()
 
+def listdir_fullpath(d):
+    return [os.path.join(d, f) for f in os.listdir(d)]
+
 parser = argparse.ArgumentParser(description='Load chunks into PSQL')
 parser.add_argument("-d", "--dir", help="specify input directory",
         type=str, required=True)
@@ -20,11 +23,11 @@ parser.add_argument("-c", "--connections",
         type=str, required=True)
 
 args = parser.parse_args()
-max_threads = args.threads
+max_threads = int(args.threads)
 max_conns = args.connections
 working_dir = args.dir
 
-files = os.listdir(working_dir)
+files = listdir_fullpath(working_dir)
 
 # Open a threaded pool connection
 psql_pool = pool.ThreadedConnectionPool(
@@ -52,36 +55,28 @@ def insert_comment(fname):
         for line in json_file:
             comment = json.loads(line)
             timestamp = datetime.utcfromtimestamp(int(comment["created_utc"]))
-            comment["year"] = timestamp.year
-            comment["month"] = timestamp.month
-            comment["day"] = timestamp.day
+            comment["date"] = timestamp.date()
 
             # Cursor execute insertion
             ps_cursor.execute("""
                 INSERT INTO comments (
                 author,
                 subreddit,
-                subreddit_id,
                 parent_id,
                 id,
                 score,
                 body,
-                year,
-                month,
-                day
+                date
                 ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                %s, %s, %s, %s, %s, %s, %s)
                 ;""", (
                     comment["author"],
                     comment["subreddit"],
-                    comment["subreddit_id"],
                     comment["parent_id"],
                     comment["id"],
                     comment["score"],
                     comment["body"],
-                    comment["year"],
-                    comment["month"],
-                    comment["day"]
+                    comment["date"]
                     ))
 
         # Commit changes, close connection, return conn to pool
