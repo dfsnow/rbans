@@ -82,6 +82,7 @@ def insert_comment(fname):
         # Commit changes, close connection, return conn to pool
         ps_connection.commit()
         ps_cursor.close()
+        ps_connection.close()
         psql_pool.putconn(ps_connection)
 
         print("Successfully inserted: " + fname)

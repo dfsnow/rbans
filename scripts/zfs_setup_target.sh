@@ -3,9 +3,11 @@
 sudo apt-get install -y software-properties-common
 
 # Add zfs to sources list
-sed -i 's/main/main contrib non-free/g' /etc/apt/sources.list
-sudo apt-get install linux-headers-amd64
-sudo apt-get install zfs-dkms zfsutils-linux
+#sed -i 's/main/main contrib non-free/g' /etc/apt/sources.list
+#sudo apt-get install linux-headers-amd64
+#sudo apt-get install zfs-dkms zfsutils-linux
+
+# Build ZFS from source ZoL GH
 
 # Install ZFS pool with appropriate options
 sudo zpool create -f tank -o ashift=12 -o autoreplace=on -o autoexpand=on \

@@ -11,7 +11,6 @@ psql -d "$db_name" -U "$db_user" << EOD
     BEGIN;
     DROP TABLE IF EXISTS "public"."comments";
     CREATE TABLE "public"."comments" (
-        gid serial,
         "author" varchar(20),
         "subreddit" varchar(200),
         "parent_id" varchar(20),
@@ -39,9 +38,9 @@ done
 
 psql -d "$db_name" -U "$db_user" << EOD
 
-    CREATE UNIQUE INDEX comments_id_idx ON comments (date, id);
+    CREATE INDEX comments_date_subreddit_author_idx ON comments (date, subreddit, author);
     CREATE INDEX comments_date_subreddit_idx ON comments (date, subreddit);
-    CREATE INDEX comments_subreddit ON comments (subreddit);
+    CREATE INDEX comments_subreddit_idx ON comments (subreddit);
     CREATE INDEX comments_author_idx ON comments (author);
 
 EOD
