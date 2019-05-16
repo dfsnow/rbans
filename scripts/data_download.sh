@@ -1,7 +1,7 @@
 #!/bin/sh
 
-data_dir=/data/reddit
 source config.sh
+data_dir=/data/reddit
 
 # Downloading from offsite server with torrent of data
 #for year in $(seq 2005 2017); do
