@@ -1,13 +1,13 @@
 SELECT DISTINCT d.author, d.subreddit sub_b, count(*) OVER(PARTITION BY d.subreddit, d.author)
-FROM comments_2008_02 c
+FROM comments_2012_02 c
 JOIN (
 SELECT DISTINCT author, subreddit
-FROM comments_2008_02
+FROM comments_2012_02
 WHERE subreddit IN (
     SELECT subreddit
     FROM (
         SELECT subreddit, count(*) AS comments
-        FROM comments_2008_02
+        FROM comments_2012_02
         GROUP BY subreddit 
         ORDER BY comments
         LIMIT 1000

@@ -47,7 +47,7 @@ sudo zfs set dedup=off tank
 sudo zfs set sync=disabled tank
 
 # Increase ARC max with the following run as root:
-echo 60129542144 > /sys/module/zfs/parameters/zfs_arc_max
+echo 124554051584 > /sys/module/zfs/parameters/zfs_arc_max
 
 # Create a zvol for connecting via iSCSI
 sudo zfs create -o compression=lz4 -o dedup=off -o volblocksize=8K -V 3T tank/psql_data
