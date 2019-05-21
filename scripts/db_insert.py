@@ -26,6 +26,9 @@ args = parser.parse_args()
 max_threads = int(args.threads)
 max_conns = args.connections
 working_dir = args.dir
+db_user = os.environ.get("db_user")
+db_name = os.environ.get("db_name")
+db_password = os.environ.get("db_password")
 
 files = listdir_fullpath(working_dir)
 
@@ -33,11 +36,11 @@ files = listdir_fullpath(working_dir)
 psql_pool = pool.ThreadedConnectionPool(
         minconn = 1,
         maxconn = max_conns,
-        user = db_config.db_user,
+        user = db_user,
         host = "localhost",
         port = "5432",
-        database = "reddit",
-        password = db_config.db_password)
+        database = db_name,
+        password = db_password)
 
 # Check if pool creation successful
 if(psql_pool):
