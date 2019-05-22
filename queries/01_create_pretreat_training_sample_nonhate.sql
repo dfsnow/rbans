@@ -1,1 +1,1 @@
-\COPY (SELECT id, date, score, subreddit, body FROM comments TABLESAMPLE SYSTEM(18) WHERE date >= '2015-01-01' AND date <= '2017-01-15') TO '/home/snow/rbans/data/main_training_sample_nonhate.csv' WITH CSV HEADER;
+\COPY (SELECT id, date, score, subreddit, body FROM comments TABLESAMPLE SYSTEM(20) WHERE date >= '2015-01-01' AND date <= '2017-01-15' AND LOWER(subreddit) NOT IN (SELECT subreddit FROM hate_subs)) TO '/home/snow/rbans/data/main_training_sample_nonhate.csv' WITH CSV HEADER;

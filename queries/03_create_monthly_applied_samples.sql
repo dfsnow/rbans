@@ -1,1 +1,1 @@
-\COPY (SELECT id, date, score, subreddit, body FROM comments TABLESAMPLE SYSTEM_ROWS(100) WHERE date >= '2015-01-01' AND date <= '2019-02-28') TO '/home/snow/rbans/data/main_applied_sample_all.csv' WITH CSV HEADER;
+\COPY (SELECT id, date, score, subreddit, body FROM comments TABLESAMPLE SYSTEM_ROWS(10000000) WHERE date >= '2015-01-01' AND date <= '2019-02-28') TO '/home/snow/rbans/data/main_applied_sample_all.csv' WITH CSV HEADER;
