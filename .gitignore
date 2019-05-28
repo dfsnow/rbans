@@ -1,5 +1,7 @@
 config.sh
 db_config.py
 data/main*
+data/test*
+data/split/*
 .ipynb_checkpoints
 __pycache__
