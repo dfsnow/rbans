@@ -3,5 +3,6 @@ db_config.py
 data/main*
 data/test*
 data/split/*
+data/applied/*
 .ipynb_checkpoints
 __pycache__
