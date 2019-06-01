@@ -35,11 +35,11 @@ data_path = "/home/dfsnow/rbans/data/"
 # Create ekphrasis preprocessor class
 ekphrasis_processor = TextPreProcessor(
     normalize=['url', 'email', 'percent', 'money', 'phone', 'user', 'time', 'date', 'number'],  # normalize terms
-    fix_html=True,  # fix HTML tokens  
+    fix_html=True,  # fix HTML tokens
     segmenter="english",  # corpus for word segmentation
     corrector="english",  # corpus for spell correction
     unpack_hashtags=True,  # perform word segmentation on hashtags
-    unpack_contractions=True,  # unpack contractions 
+    unpack_contractions=True,  # unpack contractions
     spell_correct_elong=False,  # spell correction for elongated words
     dicts=[emoticons]  # replace emojis with words
 )
@@ -87,7 +87,7 @@ def read_iter(start_row):
     )
 
 train_len = 229603257
-completed = [int(chunk[0:4]) * 100000 for chunk in os.listdir(os.path.join(data_path, 'split/'))] 
+completed = [int(chunk[0:4]) * 100000 for chunk in os.listdir(os.path.join(data_path, 'split/'))]
 all_jobs = list(range(0, train_len, 100000))
 jobs = set(all_jobs) - set(completed)
 print(jobs)
@@ -147,12 +147,12 @@ def vocab_filter(start_row):
         names=["id", "score", "body", "label"],
         dtype={"id": str, "score": str, "body": str, "label": int},
     )
-    
+
     chunk = chunk.loc[
         (chunk.label == 1 & chunk.body.str.contains('|'.join(re.escape(w) for w in hate_words), case=False)) |
         (chunk.label == 0)
     ]
-    
+
     chunk.to_csv(
         os.path.join(data_path, "vocab/" + str(filename).zfill(4) + "_preprocessed_chunk.csv"),
         quoting=csv.QUOTE_NONNUMERIC,
@@ -160,7 +160,7 @@ def vocab_filter(start_row):
     )
 
 train_len = 229603257
-completed = [int(chunk[0:4]) * 100000 for chunk in os.listdir(os.path.join(data_path, 'vocab/'))] 
+completed = [int(chunk[0:4]) * 100000 for chunk in os.listdir(os.path.join(data_path, 'vocab/'))]
 all_jobs = list(range(0, train_len, 100000))
 jobs = set(all_jobs) - set(completed)
 print(len(jobs))
@@ -179,8 +179,8 @@ train = pd.read_csv(
 train.label.sum()
 
 # Split hate and nonhate datasets into train, test, and validate
-train, test = train_test_split(train, test_size=0.2, random_state=2) 
-train, validate = train_test_split(train, test_size=0.2, random_state=2) 
+train, test = train_test_split(train, test_size=0.2, random_state=2)
+train, validate = train_test_split(train, test_size=0.2, random_state=2)
 
 # Save train test and validate to CSV
 train.to_csv(os.path.join(data_path, "main_train.csv"), index=False)
