@@ -4,5 +4,6 @@ data/main*
 data/test*
 data/split/*
 data/applied/*
+data/vocab/*
 .ipynb_checkpoints
 __pycache__
