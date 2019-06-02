@@ -6,7 +6,9 @@ Training Sample 2015/01/01 - 2017/02/15, ALL = 229,603,257
 30 % sample of all hate posts (8346164)
 
 main_data_preprocessed.csv = 229203259
-main_data_filtered.csv = 228655219
+main_data_filtered.csv = 227037967
+
+Removed via SAGE = 2165292
 
 main_train.csv = 183000000
 main_test.csv = 22800000
