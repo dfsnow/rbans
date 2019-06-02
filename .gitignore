@@ -8,3 +8,4 @@ data/vocab/*
 data/embeddings/*
 .ipynb_checkpoints
 __pycache__
+*.pt
