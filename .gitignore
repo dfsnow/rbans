@@ -6,6 +6,8 @@ data/split/*
 data/applied/*
 data/vocab/*
 data/embeddings/*
+data/model/*
+data/analysis/*
 .ipynb_checkpoints
 __pycache__
 *.pt
