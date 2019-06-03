@@ -56,15 +56,14 @@ def train_model(model, train_iter, optimizer, loss_func, epoch):
     model.train()
     for idx, batch in enumerate(train_iter):
         optimizer.zero_grad()
-        batch_size = batch.body.size()[1]  # subsetting to fix a weird DataParallel bug
         predictions = model(batch.body).squeeze(1)
-        loss = loss_func(predictions[0:batch_size], batch.label)
-        acc = binary_accuracy(predictions[0:batch_size], batch.label)
+        loss = loss_func(predictions, batch.label)
+        acc = binary_accuracy(predictions, batch.label)
         loss.backward()
         optimizer.step()
         steps += 1
 
-        if steps % 10000 == 0:
+        if steps % 5000 == 0:
             print (f'Epoch: {epoch+1}, Idx: {idx+1}, Training Loss: {loss.item():.4f}, Training Accuracy: {acc.item()*100: .2f}%')
 
         total_epoch_loss += loss.item()
@@ -81,10 +80,9 @@ def evaluate_model(model, validate_iter, loss_func):
     model.eval()
     with torch.no_grad():
         for idx, batch in enumerate(validate_iter):
-            batch_size = batch.body.size()[1]
             predictions = model(batch.body).squeeze(1)
-            loss = loss_func(predictions[0:batch_size], batch.label)
-            acc = binary_accuracy(predictions[0:batch_size], batch.label)
+            loss = loss_func(predictions, batch.label)
+            acc = binary_accuracy(predictions, batch.label)
 
             total_epoch_loss += loss.item()
             total_epoch_acc += acc.item()

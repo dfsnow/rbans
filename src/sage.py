@@ -35,7 +35,7 @@ def fLogNormalAux(eta,ecounts,exp_eq_m,eq_inv_tau):
     denom = tile(exp(eta),(K,1)).dot(exp_eq_m.T)
     out = -(eta.T.dot(ecounts).sum(axis=0) - C * log(denom.sum(axis=0)) - 0.5 * eq_inv_tau.T.dot(eta ** 2))
     return(out[0])
-           
+
 def gLogNormalAux(eta,ecounts,exp_eq_m,eq_inv_tau):
     C = ecounts.sum(axis=0)
     [W,K] = ecounts.shape
@@ -49,9 +49,9 @@ def gLogNormalAux(eta,ecounts,exp_eq_m,eq_inv_tau):
 def makeVocab(counts,min_count):
     N = sum([x > min_count for x in list(counts.values())])
     vocab = [word for word,count in counts.most_common(N)] #use vocab.index() to get the index of a word
-    return vocab    
+    return vocab
 
-def makeCountVec(counts,vocab):    
+def makeCountVec(counts,vocab):
     vec = zeros(len(vocab))
     for i,word in enumerate(vocab):
         vec[i] = counts[word]
@@ -59,4 +59,4 @@ def makeCountVec(counts,vocab):
 
 def topK(beta,vocab,K=10):
     return [vocab[idx] for idx in (-beta).argsort()[:K]]
-    
+
