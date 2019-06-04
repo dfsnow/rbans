@@ -8,7 +8,7 @@ for i in $(seq 1 50); do
 
     psql reddit << EOD
 
-    \COPY (SELECT id, date, score, subreddit, body FROM comments_$date TABLESAMPLE SYSTEM_ROWS(20000000))  TO '/home/snow/rbans/data/main_applied_sample_$date.csv' WITH CSV HEADER;
+    \COPY (SELECT id, date, author, subreddit, body FROM comments_$date TABLESAMPLE SYSTEM_ROWS(10000000))  TO '/home/snow/rbans/data/main_applied_sample_$date.csv' WITH CSV HEADER;
 
 EOD
 done

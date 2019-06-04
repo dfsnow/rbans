@@ -1,5 +1,5 @@
 WITH sub_rank AS (
-SELECT subreddit, authors, DENSE_RANK() OVER (ORDER BY authors DESC) AS rank_authors
+SELECT subreddit, authors, DENSE_RANK() OVER (ORDER BY authors DESC) AS author_rank
 FROM (
     SELECT subreddit, SUM(1) AS authors
     FROM (
@@ -9,13 +9,15 @@ FROM (
     GROUP BY subreddit) xb
 ORDER BY authors DESC
 )
-SELECT l.subreddit AS subl, r.subreddit AS subr, SUM(1) AS auths, SUM(l.count)
+SELECT l.subreddit AS subl, r.subreddit AS subr, SUM(1) AS auths
 FROM (
     SELECT subreddit, author, COUNT(1) 
     FROM comments_2012_01 
     WHERE subreddit IN (
         SELECT subreddit FROM sub_rank
-        WHERE rank_authors > 20 AND rank_authors < 3000)
+        WHERE author_rank > 20 AND author_rank < 300)
+    OR subreddit IN (
+        SELECT subreddit FROM hate_subs)
     GROUP BY subreddit, author) l
 JOIN (
     SELECT subreddit, author, COUNT(1)
