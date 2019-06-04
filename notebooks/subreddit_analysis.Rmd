@@ -1,0 +1,42 @@
+---
+title: "Subreddit Analysis"
+author: "Dan Snow"
+date: "6/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(dbplyr)
+library(DBI)
+
+source("../src/aggregation_funcs.R")
+con <- DBI::dbConnect(
+  RPostgreSQL::PostgreSQL(),
+  dbname = "reddit",
+  host = "192.168.1.207",
+  port = 5432,
+  user = "snow",
+  password = rstudioapi::askForPassword("Database password")
+  )
+
+```
+
+```{r agg}
+df = read_csv("https://lab.dfsnow.me:8080/concat_applied_data_2019_02.csv")
+subs <- sub_agg(df)
+auths <- auth_agg(df)
+```
+
+```{r query}
+copy_to(con, auths %>% select(author), "authors",
+  temporary = FALSE,
+  overwrite = TRUE,
+  indexes = list("author")
+)
+
+```
+
+
+

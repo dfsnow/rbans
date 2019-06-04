@@ -7,3 +7,6 @@ vader_lexicon.txt
 .ipynb_checkpoints
 __pycache__
 *.pt
+.Rproj.user
+.Rhistory
+*.Rproj
