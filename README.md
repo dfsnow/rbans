@@ -14,9 +14,15 @@ main_train.csv = 183000000
 main_test.csv = 22800000
 main_validate.csv = 22800000
 
+main_train_subsample.csv = 22000000
+main_test_subsample.csv = 2000000
+main_validate_subsample.csv = 2000000
+
 Applied Sample 2015/01/01 - 2019/02/28, 10 mil per month 
 
 Epoch: 01 | Epoch Time: 28m 58s | Train Loss: 0.393 | Train Acc: 83.56%
 Epoch: 02 | Epoch Time: 28m 32s | Train Loss: 0.378 | Train Acc: 84.31%
 Epoch: 03 | Epoch Time: 29m 2s | Train Loss: 0.376 | Train Acc: 84.38%
 Epoch: 04 | Epoch Time: 30m 37s | Train Loss: 0.375 | Train Acc: 84.41%
+Epoch: 05 | Epoch Time: 29m 15s | Train Loss: 0.374 | Train Acc: 84.43%
+Epoch: 06 | Epoch Time: 28m 29s | Train Loss: 0.372 | Train Acc: 84.44%

@@ -2,6 +2,8 @@ config.sh
 db_config.py
 data/*
 !hate_*
+emoji_utf8_lexicon.txt
+vader_lexicon.txt
 .ipynb_checkpoints
 __pycache__
 *.pt
