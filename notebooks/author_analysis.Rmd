@@ -1,0 +1,272 @@
+---
+title: "Comment Author Analysis"
+author: "Dan Snow"
+date: "6/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(MatchIt)
+library(stargazer)
+
+source("../src/aggregation_funcs.R")
+
+```
+
+First, we load the non-aggregated, labelled data created by our Jupyter Notebooks. This data contains the author, date, subreddit, sentiment, classification, and combined score.
+
+```{r agg_data, message=FALSE, eval=FALSE}
+# Load and concat all of the raw CSV data
+files <- list.files(path="../data/analysis", pattern="*.csv", full.names = T)
+comments <- do.call(bind_rows, map(files, read_csv))
+glimpse(comments)
+```
+
+Next, we filter and aggregate our data by author. The `data/authors_filter.csv` set is the result passing the list of all authors in `comments` to `queries/06_get_author_counts_bq.sql`. It contains the aggregate number of posts each author has made in the pre-treatment period, as well as the number of posts they've made in The_Donald. An author is considered "treated" if they have posted in The_Donald more than 5 times and more than 20 times overall in the pre-treatment period. Control posters are kept in the dataset if they have posted more than 20 times overall in the pre-treatment period, otherwise they are filtered out.
+
+We then take a caliper of the for months prior to treatment and get the number of posts made by our remaining treatment and control authors. Authors with a very high number of posts (> 500) are mostly bots, while authors with a low number (< 5) are relatively inactive. We use these constraints to find active, non-bot authors for matching in the pre-treatment caliper. We use the MatchIt package to find matching control authors from our overall group.
+
+```{r authors, eval=FALSE}
+# Load a list of authors with more than 20 posts + more than 5 posts in The_Donald
+authors_filter <- read_csv("../data/authors_filter.csv")
+authors_treatment <- authors_filter %>%
+  filter(count >= 20 & td_count >= 5) %>%
+  pull(author)
+
+# Load a list of active (more than 20 posts) authors
+authors_active <- authors_filter %>%
+  filter(count >= 20) %>%
+  pull(author)
+
+# Filter the overall comments set to keep only active authors
+comments_active <- comments %>%
+  filter(author %in% authors_active)
+
+# Create an author set between the caliper dates with labelled treatment authors
+authors_prematch <- get_author_prematch(
+  comments_active,
+  authors = authors_treatment,
+  caliper_date = "2016-05-01",
+  treat_date = "2016-11-01"
+)
+
+# Remove bots and low activity authors
+authors_prematch_filtered <- authors_prematch %>%
+  filter(between(count, 5, 500))
+
+# Perform matching to determine a valid set of treatment and controls
+# WARNING: VERY SLOW
+match.out <- matchit(
+  treated ~ mean_hate,
+  method = "nearest",
+  data = authors_prematch_filtered)
+
+authors_matched <- as_tibble(match.data(match.out))
+
+authors_matched %>%
+  write_csv("../data/authors_matched_v2.csv")
+
+```
+
+```{r get_main_data, message=FALSE, eval=FALSE}
+# Get the aggregated data for all authors
+authors <- get_author_stats(comments_active, authors = authors_treatment)
+
+# Keep only authors in the matched control and treatment groups
+# set the POST var to a hard cutoff at 2017-02-15, the day The_Donald
+# stopped being on the front page
+authors_final_sharp <- authors %>%
+  filter(author %in% authors_matched$author) %>%
+  mutate(post = if_else(date >= ymd("2017-02-15"), 1, 0)) %>%
+  write_csv("../data/authors_final_sharp_data.csv")
+
+# Same as above, but exclude all posts within the "treatment window"
+authors_final_fuzzy <- authors %>%
+  filter(author %in% authors_matched$author) %>%
+  mutate(post = if_else(date >= ymd("2017-02-15"), 1, 0)) %>%
+  filter(!between(date, ymd("2016-11-15"), ymd("2017-02-15"))) %>%
+    write_csv("../data/authors_final_fuzzy_data.csv")
+
+```
+
+Finally, we run the regression using our filtered, matched data for authors with different calipers.
+
+```{r model_sharp, warning=FALSE, message=FALSE}
+# Sharp treatment period with 6 month caliper
+models_sharp <- read_csv("../data/authors_final_sharp_data.csv") %>%
+  get_caliper("2016-08-01", "2017-09-01")
+
+stargazer(
+  models_sharp[1], models_sharp[2], models_sharp[3], models_sharp[4],
+  title = "DiD Hate Speech (Sharp)",
+  type = "text",
+  font.size = "large",
+  column.labels = c("NN + Vader", "NN Only"),
+  column.separate = c(2, 2),
+  dep.var.labels = c("Prop.", "Cnt.", "Prop.", "Cnt."),
+  dep.var.caption = "Treatment Effect on Hate Speech"
+  )
+```
+
+```{r model_fuzzy, warning=FALSE, message=FALSE}
+# Fuzzy treatment period with 6 month caliper
+models_fuzzy <- read_csv("../data/authors_final_fuzzy_data.csv") %>%
+  get_caliper("2016-06-01", "2017-08-01")
+
+stargazer(
+  models_fuzzy,
+  title = "DiD Hate Speech (Fuzzy)",
+  type = "text",
+  font.size = "large",
+  column.labels = c("NN + Vader", "NN Only"),
+  column.separate = c(2, 2),
+  dep.var.labels = c("Prop.", "Cnt.", "Prop.", "Cnt."),
+  dep.var.caption = "Treatment Effect on Hate Speech"
+  )
+```
+
+
+```{r summary_table, message=FALSE}
+# Create summary tables for each cohort
+authors_final_sharp <- read_csv("../data/authors_final_sharp_data.csv")
+authors_final_fuzzy <- read_csv("../data/authors_final_fuzzy_data.csv")
+
+authors_final_sharp %>%
+  group_by(treated) %>%
+  summarize(
+      mean_sent = weighted.mean(mean_sent, count, na.rm = T),
+      mean_clas = weighted.mean(mean_clas, count, na.rm = T),
+      mean_hate = weighted.mean(mean_hate, count, na.rm = T),
+      cnt_clas = sum(cnt_clas, na.rm = T),
+      cnt_hate = sum(cnt_hate, na.rm = T),
+      post = weighted.mean(post, count, na.rm = T)
+  ) %>% knitr::kable()
+
+authors_final_fuzzy %>%
+  group_by(treated) %>%
+  summarize(
+      mean_sent = weighted.mean(mean_sent, count, na.rm = T),
+      mean_clas = weighted.mean(mean_clas, count, na.rm = T),
+      mean_hate = weighted.mean(mean_hate, count, na.rm = T),
+      cnt_clas = sum(cnt_clas, na.rm = T),
+      cnt_hate = sum(cnt_hate, na.rm = T),
+      post = weighted.mean(post, count, na.rm = T)
+  ) %>% knitr::kable()
+```
+
+
+```{r plots, warning=FALSE, message=FALSE, fig.align='center', fig.width=9, fig.height=6.5}
+authors <- read_csv("../data/authors_final_data.csv")
+
+stat_names <- list(
+  'mean_hate' = "Prop. NN + VADER",
+  'mean_clas' = "Prop. NN Only",
+  'cnt_hate' = "Count NN + VADER",
+  'cnt_clas' = "Count NN Only"
+)
+
+stat_labeller <- function(variable, value){
+  return(stat_names[value])
+}
+
+authors_final_sharp %>%
+  author_agg_by_month() %>%
+  ungroup() %>%
+  mutate(date = ymd(date)) %>%
+  filter(between(date, ymd("2016-05-01"), ymd("2017-11-01"))) %>%
+  gather(stat, value, -date, -treated, -mean_sent) %>%
+ggplot() +
+  geom_line(aes(
+    x = date,
+    y = value,
+    color = factor(treated),
+    group = treated),
+    size = 1.1
+    ) +
+  facet_wrap(vars(stat), scales = "free_y", labeller = stat_labeller) +
+  geom_vline(xintercept = ymd("2017-02-01"), linetype = "dashed") +
+  scale_color_manual(
+    breaks = c("1", "0"),
+    labels = c("0" = "Control", "1" = "Treated"),
+    values = c("0" = "blue", "1" = "red"),
+    name = "Treatment Status",
+    ) +
+  theme_bw() +
+  labs(
+    title = "Hate Speech Over Time (Sharp)"
+  ) +
+  theme(
+    axis.title = element_blank()
+  ) +
+  ggsave("../plots/hs_sharp.png", width = 7, height = 5)
+
+authors_final_fuzzy %>%
+  author_agg_by_month() %>%
+  ungroup() %>%
+  mutate(date = ymd(date)) %>%
+  filter(between(date, ymd("2016-05-01"), ymd("2017-11-01"))) %>%
+  gather(stat, value, -date, -treated, -mean_sent) %>%
+ggplot() +
+  geom_line(aes(
+    x = date,
+    y = value,
+    color = factor(treated),
+    group = treated),
+    size = 1.1
+    ) +
+  facet_wrap(vars(stat), scales = "free_y", labeller = stat_labeller) +
+  scale_color_manual(
+    breaks = c("1", "0"),
+    labels = c("0" = "Control", "1" = "Treated"),
+    values = c("0" = "blue", "1" = "red"),
+    name = "Treatment Status",
+    ) +
+  annotate("rect",
+    xmin = ymd("2016-11-01"), xmax = ymd("2017-03-01"),
+    ymin = -Inf, ymax = Inf,
+    fill = "grey90"
+    ) +
+  theme_bw() +
+  labs(
+    title = "Hate Speech Over Time (Fuzzy)"
+  ) +
+  theme(
+    axis.title = element_blank()
+  ) +
+  ggsave("../plots/hs_fuzzy.png", width = 7, height = 5)
+
+authors %>%
+  author_agg_by_month() %>%
+  ungroup() %>%
+  mutate(date = ymd(date)) %>%
+  gather(stat, value, -date, -treated, -mean_sent) %>%
+  ggplot() +
+  geom_line(aes(
+    x = date,
+    y = value,
+    color = factor(treated),
+    group = treated),
+    size = 1.1
+    ) +
+  facet_wrap(vars(stat), scales = "free_y", labeller = stat_labeller) +
+  scale_color_manual(
+    breaks = c("1", "0"),
+    labels = c("0" = "Control", "1" = "Treated"),
+    values = c("0" = "blue", "1" = "red"),
+    name = "Treatment Status",
+    ) +
+  theme_bw() +
+  labs(
+    title = "Hate Speech Over Time (No Matching, No DiD)"
+  ) +
+  theme(
+    axis.title = element_blank()
+  ) +
+  ggsave("../plots/hs_no_matching.png", width = 7, height = 5)
+
+```
+
+
+
