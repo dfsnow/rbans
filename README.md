@@ -70,7 +70,7 @@ rbans
 
 The list of hateful subreddits in `data/hate_subs.csv` was compiled by manually scraping news articles and various RES filters. If you disagree with any of the subs or would like to add more, please feel free to make a pull request.
 
-Initial data sample taken from 2015/01/01 - 2017/02/15, where hate posts are posts from the subreddits in the hate subs list
+Initial data sample taken from 2015-01-01 - 2017-02-15, where hate posts are posts from the subreddits in the hate subs list
 - Total size = 229,603,257
 - Made up of 15% sample of all nonhate posts (221,257,093)
 - Made up of 30% sample of all hate posts (8,346,164)
