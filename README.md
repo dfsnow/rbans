@@ -10,7 +10,7 @@ Social media has given hate and 'fringe' groups new opportunities to organize. I
 
 We examine the effect of this soft-ban on hate speech using a difference-in-difference approach. We measure the proportion of hate speech in the pre-and post-treatment periods using a FastText neural network initialized with GLoVe word embeddings and trained on a filtered corpus of pre-treatment comment data from particularly hateful subreddits. We further refine our classifier using VADER sentiment analysis, combining both our classification and the VADER compound sentiment score into a single binary outcome via a simple AND gate.
 
-Finally, we consider the treatment group to be any active The_Donald poster (5 comments in the pre-treatment period). We establish a control group of active (20 comments in the pre-treatment period) users by matching them within the pre-treatment period on our independent variables using R's `MatchIt` package.
+Finally, we consider the treatment group to be any active The_Donald poster (5 comments in the pre-treatment period). We establish a control group of active (20 comments in the pre-treatment period) users by matching them within the pre-treatment period on our independent variables using R's `MatchIt` package. We perform the DiD for a number of different caliper widths.
 
 ## Code
 
